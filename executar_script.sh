@@ -27,7 +27,7 @@ print_line "${CYAN}" "                METEOROLÓGICOS AUTOMATIZADO             "
 print_line "${RED}" "                        By: Vinicius                      "
 print_line "${BLUE}" "======================================================="
 
-echo -e "\n${GREEN}Este sistema irá baixar dados meteorológicos para você."
+echo -e "\n${YELLOW}Este sistema irá baixar dados meteorológicos para você."
 echo -e "Para iniciar o processo, pressione qualquer tecla..."
 
 # Espera o usuário pressionar uma tecla
