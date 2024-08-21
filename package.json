@@ -1,0 +1,23 @@
+{
+  "name": "script_baixar_dados",
+  "version": "1.0.0",
+  "description": "Script para consultar API e salvar dados",
+  "main": "receberdados.js",
+  "bin": "receberdados.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "axios": "^1.7.4"
+  },
+  "pkg": {
+    "targets": [
+      "node14-linux-x64",
+      "node14-macos-x64",
+      "node14-win-x64"
+    ],
+    "output": "Baixar_Dados_Meteorologicos"
+  },
+  "author": "Vinicius",
+  "license": "ISC"
+}
