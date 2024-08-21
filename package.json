@@ -11,12 +11,16 @@
     "axios": "^1.7.4"
   },
   "pkg": {
-    "targets": [
-      "node14-linux-x64",
-      "node14-macos-x64",
-      "node14-win-x64"
-    ],
-    "output": "Baixar_Dados_Meteorologicos"
+  "targets": [
+    "node14-linux-x64",
+    "node14-macos-x64",
+    "node14-win-x64"
+  ],
+  "output": "Baixar_Dados_Meteorologicos",
+  "assets": [
+    "node_modules/axios/**/*",
+    "executar_script.sh"
+  ]
   },
   "author": "Vinicius",
   "license": "ISC"
