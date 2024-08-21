@@ -24,6 +24,7 @@ clear
 print_line "${BLUE}" "======================================================="
 print_line "${CYAN}" "          BEM-VINDO AO SISTEMA DE BAIXAR DADOS         "
 print_line "${CYAN}" "                METEOROLÓGICOS AUTOMATIZADO             "
+print_line "${RED}" "                        By: Vinicius                      "
 print_line "${BLUE}" "======================================================="
 
 echo -e "\n${GREEN}Este sistema irá baixar dados meteorológicos para você."
