@@ -45,11 +45,25 @@ function perguntarIntervaloAnos() {
     });
 }
 
+// Pergunta ao usuário o mês inicial
+function perguntarMesInicial() {
+    return new Promise((resolve) => {
+        rl.question('Digite o mês inicial (no formato MM, ex: 01, 02, ..., 12):\n', (mesInicio) => {
+            if (/^(0[1-9]|1[0-2])$/.test(mesInicio)) {
+                resolve(mesInicio);
+            } else {
+                console.log('Mês inválido. Usando mês inicial padrão (01).');
+                resolve('01');
+            }
+        });
+    });
+}
+
 // Função para gerar todas as datas dentro do intervalo
-function gerarDatas(anoInicio, anoFim) {
+function gerarDatas(anoInicio, anoFim, mesInicio) {
     const datas = [];
     for (let ano = anoInicio; ano <= anoFim; ano++) {
-        for (let mes = 1; mes <= 12; mes++) {
+        for (let mes = ano === anoInicio ? parseInt(mesInicio, 10) : 1; mes <= 12; mes++) {
             const diasNoMes = new Date(ano, mes, 0).getDate();
             for (let dia = 1; dia <= diasNoMes; dia++) {
                 const data = `${ano}${String(mes).padStart(2, '0')}${String(dia).padStart(2, '0')}`;
@@ -64,6 +78,7 @@ function gerarDatas(anoInicio, anoFim) {
 async function executar() {
     const stationId = await perguntarEstacao();
     const { anoInicio, anoFim } = await perguntarIntervaloAnos();
+    const mesInicio = await perguntarMesInicial();
 
     // Caminho onde a pasta principal vai ser criada
     const desktopPath = path.join(os.homedir(), 'Desktop');
@@ -85,7 +100,7 @@ async function executar() {
     }
 
     // Gera todas as datas dentro do intervalo
-    const datas = gerarDatas(anoInicio, anoFim);
+    const datas = gerarDatas(anoInicio, anoFim, mesInicio);
 
     // Função que vai gerar um nome de arquivo único com base na data da URL
     function gerarNomeArquivoUnico(data) {
@@ -122,8 +137,11 @@ async function executar() {
     }
 
     // Consulta e salva os dados para todas as datas
-    for (const data of datas) {
+    for (let i = 0; i < datas.length; i++) {
+        const data = datas[i];
+        console.log(`Baixando dados para ${data} (${i + 1}/${datas.length})...`);
         await consultarESalvar(data);
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Intervalo de 1 segundo entre as requisições
     }
 
     rl.close();
