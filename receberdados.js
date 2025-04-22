@@ -33,7 +33,6 @@ function perguntarIntervaloAnos() {
     return new Promise((resolve) => {
         rl.question('Digite o ano inicial:\n', (anoInicio) => {
             rl.question('Digite o ano final:\n', (anoFim) => {
-                // Verifica se os anos são válidos
                 if (/^\d{4}$/.test(anoInicio) && /^\d{4}$/.test(anoFim)) {
                     resolve({ anoInicio: parseInt(anoInicio), anoFim: parseInt(anoFim) });
                 } else {
@@ -80,72 +79,81 @@ async function executar() {
     const { anoInicio, anoFim } = await perguntarIntervaloAnos();
     const mesInicio = await perguntarMesInicial();
 
-    // Caminho onde a pasta principal vai ser criada
     const desktopPath = path.join(os.homedir(), 'Desktop');
-
-    // Nome da pasta principal
     const pastaPrincipal = path.join(desktopPath, 'Dados_meteorologicos');
 
-    // Verifica se a pasta principal já existe e, se não, cria ela
-    if (!fs.existsSync(pastaPrincipal)) {
-        fs.mkdirSync(pastaPrincipal);
-    }
+    if (!fs.existsSync(pastaPrincipal)) fs.mkdirSync(pastaPrincipal);
 
-    // Caminho para a pasta da estação
     const pastaEstacao = path.join(pastaPrincipal, stationId);
+    if (!fs.existsSync(pastaEstacao)) fs.mkdirSync(pastaEstacao);
 
-    // Verifica se a pasta da estação já existe e, se não, cria ela
-    if (!fs.existsSync(pastaEstacao)) {
-        fs.mkdirSync(pastaEstacao);
-    }
-
-    // Gera todas as datas dentro do intervalo
     const datas = gerarDatas(anoInicio, anoFim, mesInicio);
 
-    // Função que vai gerar um nome de arquivo único com base na data da URL
     function gerarNomeArquivoUnico(data) {
-        // Usa a data para gerar o nome do arquivo
-        return `dados_${data}.json`;
+        return `dados_${data}`;
     }
 
-    // Função que vai chamar a consulta da API e salvar o resultado
     async function consultarESalvar(data) {
-        const apiUrl = `https://api.weather.com/v2/pws/history/daily?stationId=${stationId}&format=json&units=m&date=${data}&apiKey=de6a7c7407234831aa7c74072338319d`;
+        const apiUrl = `https://api.weather.com/v2/pws/history/all?stationId=${stationId}&format=json&units=m&date=${data}&apiKey=de6a7c7407234831aa7c74072338319d`;
         try {
             const resposta = await axios.get(apiUrl);
             const dados = resposta.data;
 
-            // Caminho onde os dados serão salvos com um nome de arquivo único baseado na data da URL
             const ano = data.slice(0, 4);
             const mes = data.slice(4, 6);
             const pastaAno = path.join(pastaEstacao, ano);
-            if (!fs.existsSync(pastaAno)) {
-                fs.mkdirSync(pastaAno);
-            }
+            if (!fs.existsSync(pastaAno)) fs.mkdirSync(pastaAno);
             const pastaMes = path.join(pastaAno, mes);
-            if (!fs.existsSync(pastaMes)) {
-                fs.mkdirSync(pastaMes);
-            }
-            const arquivo = path.join(pastaMes, gerarNomeArquivoUnico(data));
+            if (!fs.existsSync(pastaMes)) fs.mkdirSync(pastaMes);
 
-            // Salva os dados no arquivo
-            fs.writeFileSync(arquivo, JSON.stringify(dados, null, 2));
-            console.log(`Dados salvos em: ${arquivo}`);
+            const nomeBase = gerarNomeArquivoUnico(data);
+            const caminhoJson = path.join(pastaMes, `${nomeBase}.json`);
+            fs.writeFileSync(caminhoJson, JSON.stringify(dados, null, 2));
+            console.log(`JSON salvo em: ${caminhoJson}`);
+
+            // Se houver observações, exporta como CSV
+            if (dados && dados.observations && dados.observations.length > 0) {
+                const observacoes = dados.observations;
+                const primeiro = observacoes[0];
+
+                const cabecalho = [
+                    ...Object.keys(primeiro).filter(k => k !== 'metric'),
+                    ...Object.keys(primeiro.metric)
+                ].join(';');
+
+                const linhas = observacoes.map(obs => {
+                    const principais = Object.entries(obs).filter(([k]) => k !== 'metric');
+                    const metricas = Object.entries(obs.metric);
+                    const valores = [...principais, ...metricas].map(([_, v]) => {
+                        if (typeof v === 'string' && v.includes(';')) {
+                            return `"${v}"`; // Escapa strings com ponto e vírgula
+                        }
+                        return v;
+                    });
+                    return valores.join(';');
+                });
+
+                const conteudoCSV = [cabecalho, ...linhas].join('\n');
+                const caminhoCSV = path.join(pastaMes, `${nomeBase}.csv`);
+                fs.writeFileSync(caminhoCSV, conteudoCSV);
+                console.log(`CSV salvo em: ${caminhoCSV}`);
+            } else {
+                console.warn(`Sem observações para ${data}`);
+            }
+
         } catch (erro) {
             console.error('Erro ao consultar a API:', erro.message);
         }
     }
 
-    // Consulta e salva os dados para todas as datas
     for (let i = 0; i < datas.length; i++) {
         const data = datas[i];
         console.log(`Baixando dados para ${data} (${i + 1}/${datas.length})...`);
         await consultarESalvar(data);
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Intervalo de 1 segundo entre as requisições
+        await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     rl.close();
 }
 
-// Executa o script
 executar();
